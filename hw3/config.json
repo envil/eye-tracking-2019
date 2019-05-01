@@ -8,8 +8,8 @@
     "max": 50
   },
   "velocity": {
-    "min": 30,
-    "max": 100
+    "min": 300,
+    "max": 500
   },
   "sam_freq": 50,
   "display": {

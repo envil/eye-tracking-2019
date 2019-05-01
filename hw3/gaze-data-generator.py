@@ -7,20 +7,20 @@ import matplotlib.pyplot as plt
 
 NO_OF_TARGET_POINTS = 6
 DISPERSION_ANGLE_RANGE = [0.5, 2]  # holmquist_chpt5 P152
-POISSON_LAMBDA = 200  # (ms) holmquist_chpt5
+MEAN_FIXATION_DURATION = 200  # (ms) mean duration of fixation holmquist_chpt5
 
 
-# Credit to gmb zre 11/1/07
+# Credit to gmb zre 11/1/07, ported to python by Viet Ta
 def pix2angle(display, pix):
     pix_size = display.size / display.resolution.X  # cm/pix
     sz = pix * pix_size
-    return 2 * 180 * math.atan(sz / (2 * display.distance)) / math.pi
+    return 2 * math.radians(math.atan(sz / (2 * display.distance)))
 
 
-# Credit to gmb zre 11/1/07
+# Credit to gmb zre 11/1/07, ported to python by Viet Ta
 def angle2pix(display, ang):
     pix_size = display.size / display.resolution.X  # cm/pix
-    sz = 2 * display.distance * math.tan(math.pi * ang / (2 * 180))  # cm
+    sz = 2 * display.distance * math.tan(math.radians(ang / 2))  # cm
     return round(sz / pix_size)
 
 
@@ -31,7 +31,7 @@ def bound(low, high, value):
 
 # generate 6 random points on the screen to simulate the gaze
 def generate_target_points(display):
-    return np.array([generate_random_point([0, display.resolution.X], [0, display.resolution.Y]) for x in
+    return np.array([generate_random_point([0, display.resolution.X], [0, display.resolution.Y]) for i in
                      range(NO_OF_TARGET_POINTS)])
 
 
@@ -40,15 +40,29 @@ def generate_random_point(x_range, y_range):
             np.random.randint(*y_range)]
 
 
+def decide_next_point(previous_point_index, index_range):
+    next_point_index = previous_point_index
+    while next_point_index == previous_point_index:
+        next_point_index = np.random.randint(*index_range)
+    return next_point_index
+
+
 def generate_fixation(config, point, dispersion_radius):
-    current_fixation_duration = bound(config.fixation.min, config.fixation.max, np.random.poisson(POISSON_LAMBDA))
-    print(current_fixation_duration)
-    number_of_points = round(config.sam_freq * current_fixation_duration / 1000)
-    x_range = [max(0, point[0] - dispersion_radius),
-               min(config.display.resolution.X, point[0] + dispersion_radius)]
-    y_range = [max(0, point[1] - dispersion_radius),
-               min(config.display.resolution.Y, point[1] + dispersion_radius)]
+    fixation_duration = bound(config.fixation.min, config.fixation.max,
+                              np.random.poisson(MEAN_FIXATION_DURATION))
+    number_of_points = round(config.sam_freq * fixation_duration / 1000)
+    x_range = [bound(0, config.display.resolution.X, point[0] - dispersion_radius),
+               bound(0, config.display.resolution.X, point[0] + dispersion_radius)]
+    y_range = [bound(0, config.display.resolution.Y, point[1] - dispersion_radius),
+               bound(0, config.display.resolution.Y, point[1] + dispersion_radius)]
     return [generate_random_point(x_range, y_range) for i in range(number_of_points)]
+
+
+def generate_saccade(config, point_a, point_b):
+    speed = np.random.randint(config.velocity.min, config.velocity.max)
+    point_distance = pix2angle(config.display, np.linalg.norm(point_a - point_b))
+    duration = bound(config.saccade.min, config.saccade.max, 1000 * point_distance / speed)
+    print(speed, point_distance, duration)
 
 
 def generate_gaze_data(config):
@@ -57,18 +71,19 @@ def generate_gaze_data(config):
     dispersion_radius = round(angle2pix(config.display, DISPERSION_ANGLE_RANGE[1]) / 2)
 
     target_points = generate_target_points(config.display)
-    for point in target_points:
-        sequences = np.concatenate((sequences, generate_fixation(config, point, dispersion_radius)))
-        # generate saccade
+    previous_point = sequences[0]
+    previous_point_index = -1
+    while sequences.shape[0] < 150:
+        current_point_index = decide_next_point(previous_point_index, [0, len(target_points)])
+        current_point = target_points[current_point_index]
+        generate_saccade(config, previous_point, current_point)
+        sequences = np.concatenate((sequences, generate_fixation(config, current_point, dispersion_radius)))
 
-    print(sequences.shape)
-    # sequences = np.array(sequences)
-    plt.scatter(target_points[:, 0], target_points[:, 1], c='r')
-    plt.scatter(sequences[:, 0], sequences[:, 1], c='b', s=1)
+    plt.plot(sequences[:, 0], sequences[:, 1], c='b')
+    plt.scatter(target_points[:, 0], target_points[:, 1], c='r', s=100)
     plt.show()
 
 
-# fd_min=100 fd_max=250 sd_min=20 sd_max=50 vel_min=30 vel_max=100 sam_freq=50 X=1024 Y=768 distance=60 size=53.34
 def main():
     file_path = sys.argv[1:][0]
     if file_path:
