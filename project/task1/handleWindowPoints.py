@@ -1,12 +1,7 @@
+import numpy as np
+
 def handleWindowPoints(windowPoints): 
-    xList = []
-    yList = []
-    for p in windowPoints:
-        xList.append(p.getX())
-        yList.append(p.getY())
-    maxX = max(xList)
-    minX = min(xList)
-    maxY = max(yList)
-    minY = min(yList)
-    D = maxX - minX + maxY - minY
-    return (D, xList, yList)
+    max = np.amax(windowPoints, axis=0)
+    min = np.amin(windowPoints, axis=0)
+    
+    return (np.sum(max) + np.sum(min))

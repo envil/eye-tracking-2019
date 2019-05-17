@@ -1,29 +1,29 @@
-import statistics
-from pointClass import Point
+import numpy as np
+
 from handleWindowPoints import handleWindowPoints
 
-def detectFixations(rowData, DT, SC):
+def detectFixations(rowData, SAMPLING_FREQUENCY, DT, SC):
     fixationDuration = []
     fixationCentroid = []
     i=0
-    while i+SC-1 <= len(rowData)-1:
-        D = handleWindowPoints(rowData[i:i+SC])[0]
-        compareDispersion = D > DT
-        if compareDispersion:
+    while i+SC-1 <= rowData.shape[0]-1:
+        D = handleWindowPoints(rowData[i:i+SC])
+        
+        if D>DT:
             i=i+1
         else: 
             j=1
-            while D<=DT and i+SC-1+j<=len(rowData)-1:
-                output = handleWindowPoints(rowData[i:i+SC+j])
-                D = output[0]
+            while D<=DT and i+SC+j <= rowData.shape[0]:
+                windowPoints = rowData[i:i+SC+j]
+                D = handleWindowPoints(windowPoints)
                 j=j+1
 
-            fixationDuration.append( round((SC-1+j)*0.001, 3) ) 
-            x = statistics.mean(output[1])
-            y = statistics.mean(output[2])
-            fixationCentroid.append(Point(x,y))
+            fixationDuration.append( round((SC-1+j)*1/float(SAMPLING_FREQUENCY), 3) ) 
+            mean = np.mean(windowPoints, axis=0)
+            fixationCentroid.append( np.array([mean[0], mean[1]]) )
             i = i+SC-1+j
-    
-    rowData.append(fixationDuration)
-    rowData.append(fixationCentroid)
-    return rowData
+            
+    output = []
+    output.append(fixationDuration)
+    output.append(fixationCentroid)
+    return output

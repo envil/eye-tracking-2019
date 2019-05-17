@@ -1,67 +1,51 @@
-import math
-import csv
-import copy
+import math, csv, copy
+import numpy as np
 from pathlib import Path
-from pointClass import Point
+
 from detectFixations import detectFixations
+from getConfigParameters import getConfigParameters
 
 base_path = Path(__file__).parent
 file_path = (base_path / '../data/train.csv').resolve()
 
-# Load assigned data for group 7 to variable 'data'
-with file_path.open() as dataFile:
-    rawData = []
-    for row in csv.reader(dataFile, delimiter=','):
-        if (row[0] == 's7') or (row[0] == 's17') or (row[0] == 's27') or (row[0] == 's3') or (row[0] == 's13') or (row[0] == 's23'):
-            rawData.append(row)
+def task1(settingNumber):
 
+    # Load assigned data for group 7 to variable 'rawData'
+    with file_path.open() as dataFile:
+        rawData = []
+        for row in csv.reader(dataFile, delimiter=','):
+            if (row[0] == 's7') or (row[0] == 's17') or (row[0] == 's27') or (row[0] == 's3') or (row[0] == 's13') or (row[0] == 's23'):
+                rawData.append(row)
 
-# Initially process Points            
-pointsData = [] # Raw data without sid & known; x & y stored as Point class
-for row in rawData:
-    k = (len(row)-2)/2  # Number of Points in current processing Row
-    rowPoints = []  
-    for i in range(2, k+2):
-        x=float(row[i])
-        y=float(row[i+k])
-        rowPoints.append(Point(x,y))
-    pointsData.append(rowPoints)
+    # Initially process Points            
+    pointsData = [] # Raw data without sid & known; x & y stored in numpy array
+    for row in rawData:
+        rowPoints = []
+        i=2
+        while i < len(row)-1:
+            x=float(row[i])
+            y=float(row[i+1])
+            i=i+2
+            rowPoints.append(np.array([x,y]))
+        np_rowPoints = np.array(rowPoints)
+        pointsData.append(np_rowPoints)
 
-pointsDataCopy = copy.deepcopy(pointsData) #To be used in the SECOND SETTING
-#FIRST SETTING:
-# Choose duration-threshold to be 50ms & dispersion-threshold to be 2 degree
-# Data generated at 1000Hz, hence the moving window spans about 50 points 
-SC = 50 # spanning capacity: Number of Points that moving window initially span
-DT = 2*math.sqrt(97**2+56**2) # dispersion-threshold
+    SAMPLING_FREQUENCY = 1000 #(Hz)
+    
+    #parameters[0] is DISPERSION_THRESHOLD
+    #parameter[1] is DURATION_THRESHOLD
+    parameters = getConfigParameters(settingNumber)
+    
+    # spanning capacity: Number of Points that moving window initially span
+    SC = int(parameters[1] * SAMPLING_FREQUENCY)
 
-for rowPoints in pointsData:
-    rowPoints = detectFixations(rowPoints, DT, SC)
+    result = []
+    for rowPoints in pointsData:
+        result.append(detectFixations(rowPoints, SAMPLING_FREQUENCY, parameters[0], SC))
 
-# Printout result of centroid and duration of fixations
-# m=0
-# for rowPoints in pointsData:  
-#     m=m+1  
-#     print(rowPoints[len(rowPoints)-1])
-#     print(rowPoints[len(rowPoints)-2])
-#     print(m)
-#     print('-----')
-
-
-#SECOND SETTING:
-# Choose duration-threshold to be 70ms & dispersion-threshold to be 1 degree
-# Data generated at 1000Hz, hence the moving window spans about 70 points 
-SC = 70 # spanning capacity: Number of Points that moving window initially span
-DT = math.sqrt(97**2+56**2) # dispersion-threshold
-
-for rowPoints in pointsDataCopy:
-    rowPoints = detectFixations(rowPoints, DT, SC)
-
-# Printout result of centroid and duration of fixations
-# m=0
-# for rowPoints in pointsDataCopy:  
-#     m=m+1  
-#     print(rowPoints[len(rowPoints)-1])
-#     print(rowPoints[len(rowPoints)-2])
-#     print(m)
-#     print('-----')
-            
+    # RETURN array contains 152 rows/samples (array); 
+    # each row contains: duration of fixations in s (array)
+    # and centroid-point of fixations (array) stored in numpy array.
+    return result
+    
+                
