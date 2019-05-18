@@ -15,20 +15,9 @@ def task1(settingNumber):
         rawData = []
         for row in csv.reader(dataFile, delimiter=','):
             if (row[0] == 's7') or (row[0] == 's17') or (row[0] == 's27') or (row[0] == 's3') or (row[0] == 's13') or (row[0] == 's23'):
-                rawData.append(row)
-
-    # Initially process Points            
-    pointsData = [] # Raw data without sid & known; x & y stored in numpy array
-    for row in rawData:
-        rowPoints = []
-        i=2
-        while i < len(row)-1:
-            x=float(row[i])
-            y=float(row[i+1])
-            i=i+2
-            rowPoints.append(np.array([x,y]))
-        np_rowPoints = np.array(rowPoints)
-        pointsData.append(np_rowPoints)
+                row = np.array(row[2:])
+                row = row.astype(np.float)
+                rawData.append(np.reshape(row, (int(row.shape[0]/2), 2)))
 
     SAMPLING_FREQUENCY = 1000 #(Hz)
     
@@ -40,7 +29,7 @@ def task1(settingNumber):
     SC = int(parameters[1] * SAMPLING_FREQUENCY)
 
     result = []
-    for rowPoints in pointsData:
+    for rowPoints in rawData:
         result.append(detectFixations(rowPoints, SAMPLING_FREQUENCY, parameters[0], SC))
 
     # RETURN array contains 152 rows/samples (array); 

@@ -6,7 +6,7 @@ def detectFixations(rowData, SAMPLING_FREQUENCY, DT, SC):
     fixationDuration = []
     fixationCentroid = []
     i=0
-    while i+SC-1 <= rowData.shape[0]-1:
+    while i+SC <= rowData.shape[0]:
         D = handleWindowPoints(rowData[i:i+SC])
         
         if D>DT:
