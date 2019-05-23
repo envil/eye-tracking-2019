@@ -72,9 +72,9 @@ def plot_stat(data):
     plot_hist('MSA', data.saccade_amplitudes, data.name, data.known, data.get_msa(), data.get_msa_sd())
 
 
-def plot_hist(chart_type, data, name, known, mean, sd):
+def plot_hist(chart_name, data, name, known, mean, sd):
     plt.hist(data, color='c')
-    plt.title('{} {} {} Mean = {:.2f} SD = {:.2f}'.format(chart_type, name, known, mean, sd))
+    plt.title('{} {} {} Mean = {:.2f} SD = {:.2f}'.format(chart_name, name, known, mean, sd))
     ax = plt.gca()
     l0 = mlines.Line2D([mean, mean], [0, 100000], color='k', linestyle='--',
                        label='Mean')
