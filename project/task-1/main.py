@@ -14,13 +14,15 @@ subjects = ['s7', 's17', 's27', 's3', 's13', 's23', 'all']
 
 
 # Task 1
-def plot_fixations(index, info, data, fixation_centroids, setting):
+def plot_fixations(index, info, data, fixation_centroids, setting, save_fig=False):
     plt.figure(dpi=150)
     plt.plot(data[:, 0], data[:, 1], zorder=1)
     plt.plot(fixation_centroids[:, 0], fixation_centroids[:, 1], c='r', linewidth=0.5, zorder=2)
     plt.scatter(fixation_centroids[:, 0], fixation_centroids[:, 1], c='r', s=30, zorder=3)
     plt.title('({}) Subject: {}, Known = {}, Degree = {}, Duration = {}'.format(index, info[0], info[1], setting.degree,
                                                                                 setting.duration))
+    if save_fig:
+        plt.savefig('./figures/{}.svg'.format(index))
     plt.show()
 
 
@@ -61,18 +63,19 @@ def task3(results):
             out.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\r\n'.format(*params))
 
 
-def task4(results):
+def task4(results, save_fig=False):
     for subject in subjects:
-        plot_stat(results[subject]['true'])
-        plot_stat(results[subject]['false'])
+        plot_stat(results[subject]['true'], save_fig)
+        plot_stat(results[subject]['false'], save_fig)
 
 
-def plot_stat(data):
-    plot_hist('MFD', data.fixation_durations, data.name, data.known, data.get_mfd(), data.get_mfd_sd())
-    plot_hist('MSA', data.saccade_amplitudes, data.name, data.known, data.get_msa(), data.get_msa_sd())
+def plot_stat(data, save_fig=False):
+    plot_hist('MFD', data.fixation_durations, data.name, data.known, data.get_mfd(), data.get_mfd_sd(), save_fig)
+    plot_hist('MSA', data.saccade_amplitudes, data.name, data.known, data.get_msa(), data.get_msa_sd(), save_fig)
 
 
-def plot_hist(chart_name, data, name, known, mean, sd):
+def plot_hist(chart_name, data, name, known, mean, sd, save_fig=False):
+    plt.figure(dpi=150)
     plt.hist(data, color='c')
     plt.title('{} {} {} Mean = {:.2f} SD = {:.2f}'.format(chart_name, name, known, mean, sd))
     ax = plt.gca()
@@ -87,7 +90,9 @@ def plot_hist(chart_name, data, name, known, mean, sd):
     ax.add_line(l0)
     ax.add_line(l1)
     ax.add_line(l2)
-    ax.legend(loc=9)
+    ax.legend(loc=1)
+    if save_fig:
+        plt.savefig('./figures/stats/{}-{}-{}.svg'.format(name, chart_name, known))
     plt.show()
 
 
@@ -121,7 +126,7 @@ def main(setting):
                      range(1, fixation_centroids.shape[0])])
 
                 # Task 1
-                # plot_fixations(i, test_info[-1], data[-1], fixation_centroids, setting)
+                plot_fixations(i, test_info[-1], data[-1], fixation_centroids, setting, save_fig=False)
                 # i += 1
 
     # Task 2
@@ -131,14 +136,7 @@ def main(setting):
     task3(results)
 
     # Task 4
-    task4(results)
-
-
-# fixation_centroids, fixation_time = detect_fixations(data[0], setting.sampling_frequency,
-#                                                      setting.get_window_size(),
-#                                                      setting.get_threshold())
-# saccade_durations = np.reshape(fixation_time.flatten()[1:-1], (fixation_time.shape[0] - 1, 2))
-# plot_fixations(0, test_info[0], data[0], fixation_centroids, setting)
+    task4(results, save_fig=False)
 
 
 # setting1 = Setting(1, 0.03)
