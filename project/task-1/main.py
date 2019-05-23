@@ -23,11 +23,10 @@ def plot_fixations(index, info, data, fixation_centroids, setting):
 
 
 def task2(results):
+    print('sid\tknown\tmfd\t\tmfd_sd\tmsa\t\tmsa_sd')
     for subject in subjects:
         print(results[subject]['true'])
         print(results[subject]['false'])
-        plt.hist(results[subject]['true'].fixation_durations)
-        plt.show()
 
 
 def task3(results):
