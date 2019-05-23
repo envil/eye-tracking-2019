@@ -5,6 +5,7 @@ from setting import Setting
 from result import Result
 from idt import detect_fixations
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import utils
 
 base_path = Path(__file__).parent
@@ -12,6 +13,7 @@ file_path = (base_path / '../data/train.csv').resolve()
 subjects = ['s7', 's17', 's27', 's3', 's13', 's23', 'all']
 
 
+# Task 1
 def plot_fixations(index, info, data, fixation_centroids, setting):
     plt.figure(dpi=150)
     plt.plot(data[:, 0], data[:, 1], zorder=1)
@@ -59,6 +61,36 @@ def task3(results):
             out.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\r\n'.format(*params))
 
 
+def task4(results):
+    for subject in subjects:
+        plot_stat(results[subject]['true'])
+        plot_stat(results[subject]['false'])
+
+
+def plot_stat(data):
+    plot_hist('MFD', data.fixation_durations, data.name, data.known, data.get_mfd(), data.get_mfd_sd())
+    plot_hist('MSA', data.saccade_amplitudes, data.name, data.known, data.get_msa(), data.get_msa_sd())
+
+
+def plot_hist(chart_type, data, name, known, mean, sd):
+    plt.hist(data, color='c')
+    plt.title('{} {} {} Mean = {:.2f} SD = {:.2f}'.format(chart_type, name, known, mean, sd))
+    ax = plt.gca()
+    l0 = mlines.Line2D([mean, mean], [0, 100000], color='k', linestyle='--',
+                       label='Mean')
+    l1 = mlines.Line2D([mean - sd, mean - sd],
+                       [0, 100000], color='red', linestyle='--',
+                       label='SD')
+    l2 = mlines.Line2D([mean + sd, mean + sd],
+                       [0, 100000], color='red', linestyle='--',
+                       label='SD')
+    ax.add_line(l0)
+    ax.add_line(l1)
+    ax.add_line(l2)
+    ax.legend(loc=9)
+    plt.show()
+
+
 def main(setting):
     with file_path.open() as file:
         data = []
@@ -96,7 +128,10 @@ def main(setting):
     task2(results)
 
     # Task 3
-    # task3(results)
+    task3(results)
+
+    # Task 4
+    task4(results)
 
 
 # fixation_centroids, fixation_time = detect_fixations(data[0], setting.sampling_frequency,
