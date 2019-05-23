@@ -15,7 +15,7 @@ def detect_fixations(data, sampling_frequence, window_size, dispersion_threshold
     while start + expansion < data.shape[0]:
         D = calculate_dispersion(data[start:start + expansion, :])
 
-        if (D > dispersion_threshold):
+        if D > dispersion_threshold:
             start += 1
         else:
             expansion += 1
